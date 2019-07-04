@@ -65,13 +65,13 @@ def make_corpus_ant_forum(name,link_to_topic):
                     pass
 
 # "female logic" thread
-make_corpus_ant_forum('antibab-corpus.csv','https://antiwomen.ru/viewtopic.php?f=1&t=34252')
+# make_corpus_ant_forum('antibab-corpus.csv','https://antiwomen.ru/viewtopic.php?f=1&t=34252')
 # "should a person sleep with divorcee"
-make_corpus_ant_forum('antibab-corpus.csv','https://antiwomen.ru/viewtopic.php?f=1&t=52924')
+# make_corpus_ant_forum('antibab-corpus.csv','https://antiwomen.ru/viewtopic.php?f=1&t=52924')
 # 'should a person date a divorcee"
-make_corpus_ant_forum('antibab-corpus.csv','https://antiwomen.ru/viewtopic.php?f=1&t=1000')
+# make_corpus_ant_forum('antibab-corpus.csv','https://antiwomen.ru/viewtopic.php?f=1&t=1000')
 # the role of friend thread
-make_corpus_ant_forum('antibab-corpus.csv','https://antiwomen.ru/viewtopic.php?f=1&t=49705')
+# make_corpus_ant_forum('antibab-corpus.csv','https://antiwomen.ru/viewtopic.php?f=1&t=49705')
 
 
 

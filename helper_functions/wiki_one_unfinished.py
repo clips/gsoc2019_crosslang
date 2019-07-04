@@ -49,5 +49,3 @@ def make_txts_into_lists():
                 else:
                     set_of_words.add(line)
     return list(set_of_words)
-
-def clean_the_csvs(csvfile):
