@@ -3,10 +3,6 @@
 
 The goal of this still ongoi
 
-|                | Status                          |
-
-| ---------------- | -------------------------------  |
-
 | Annotated corpora for Russian Language (guidelines can be found below)| In process (could be found here) |
 | List of summaries of previously conducted hate speech research (in different languages) | In process
  |
