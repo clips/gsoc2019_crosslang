@@ -1,8 +1,8 @@
 ## Multilingual hate speech detection (with a focus on sexism)
 #### Google Summer of Code ' 2019, CLiPS
 
-The goal of this still ongoing project is to reach improvement in hate speech detection in Russian language and additionaly work with multilingual approaches. The repository is going to include:
- 
+The goal of this still ongoi
+
 |                | Status                          |
 
 | ---------------- | -------------------------------  |
@@ -13,6 +13,7 @@ The goal of this still ongoing project is to reach improvement in hate speech de
 | Functions to collect the corpus from several Russian websites (more details below)          | Done, can be found here |
 
 | Code to train a model for sexism detection | In process|
+
 
 
 ### Annotation guidelines and problems
