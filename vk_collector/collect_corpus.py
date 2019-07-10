@@ -6,12 +6,12 @@ from wiki_one_unfinished import get_html_from_link,handling_encoding
 from bs4 import BeautifulSoup
 
 # this is made from vk via vk API
+
 def make_corpus(name,community, query_list, service_token,vk_api_vers):
     with open(name, 'a', newline='', encoding="utf-8") as csvfile:
         headers = ['Post_id','Comment_id','Label','Text']
         writer = csv.DictWriter(csvfile, fieldnames=headers)
         writer.writeheader()
-        sexist = 'sexist'
         for query in query_list:
             # Step one: we get the list of id's of topics which have to do something with the US
             url = 'https://api.vk.com/method/wall.search?owner_id={}&own=1&owners_only=1&query=\'{}\'&access_token={}&v={}'.format(community,query,service_token,vk_api_vers)
@@ -21,20 +21,13 @@ def make_corpus(name,community, query_list, service_token,vk_api_vers):
                 comments = requests.get(new_url)
                 for cur_comment in comments.json()["response"]['items']:
                     try:
-                        writer.writerow({'Post_id':post_id['id'], 'Comment_id': cur_comment['id'],'Label': sexist, 'Text': cur_comment['text']})
+                        writer.writerow({'Post_id':post_id['id'], 'Comment_id': cur_comment['id'],'Label': 'sexist', 'Text': cur_comment['text']})
                     except:
                         pass
 
 
+# Translation: "sexism", "meToo", "sexual harassment", "decriminalization of domestic violence', 'rape', 'feminism', 'Shurigina', 'harassment'
 query_list= {'сексизм',"meToo",'сексуальные домогательства', 'декриминализация побоев','изнасилование','феминизм','Шурыгина','домогательства'}
-
-
-#make_corpus("sexism_RT.csv",-40316705,query_list, service_token,vk_api_vers)
-
-#make_corpus('sexism_lentahc.csv',-29534144,query_list,service_token,vk_api_vers)
-
-#make_corpus('sexism_medusa.csv',-76982440,query_list,service_token,vk_api_vers)
-
 
 
 def make_corpus_ant_forum(name,link_to_topic):
@@ -51,7 +44,7 @@ def make_corpus_ant_forum(name,link_to_topic):
         x = 0
         for text in soup.find_all("div", {"class": "content"}):
             try:
-                writer.writerow({'Label': 'sexist', 'Text': text.get_text()})
+                writer.writerow({'Label': 'non_sexist', 'Text': text.get_text()})
             except:
                 pass
         while x < int(number_of_pages):
@@ -60,20 +53,13 @@ def make_corpus_ant_forum(name,link_to_topic):
             soup = BeautifulSoup(html, 'html.parser')
             for text in soup.find_all("div", {"class": "content"}):
                 try:
-                    writer.writerow({'Label': 'sexist', 'Text': text.get_text()})
+                    writer.writerow({'Label': 'non_sexist', 'Text': text.get_text()})
                 except:
                     pass
 
-# "female logic" thread
-# make_corpus_ant_forum('antibab-corpus.csv','https://antiwomen.ru/viewtopic.php?f=1&t=34252')
-# "should a person sleep with divorcee"
-# make_corpus_ant_forum('antibab-corpus.csv','https://antiwomen.ru/viewtopic.php?f=1&t=52924')
-# 'should a person date a divorcee"
-# make_corpus_ant_forum('antibab-corpus.csv','https://antiwomen.ru/viewtopic.php?f=1&t=1000')
-# the role of friend thread
-# make_corpus_ant_forum('antibab-corpus.csv','https://antiwomen.ru/viewtopic.php?f=1&t=49705')
-
-
+# supposingly non-sexist
+make_corpus_ant_forum('antibab-corpus-nonsex.csv','https://antiwomen.ru/viewtopic.php?f=46&t=39731')
+make_corpus_ant_forum('antibab-corpus-nonsex.csv','https://antiwomen.ru/viewtopic.php?f=24&t=49574')
 
 
 
