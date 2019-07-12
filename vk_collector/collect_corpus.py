@@ -57,12 +57,28 @@ def make_corpus_ant_forum(name,link_to_topic):
                 except:
                     pass
 
-# supposingly non-sexist
-make_corpus_ant_forum('antibab-corpus-nonsex.csv','https://antiwomen.ru/viewtopic.php?f=46&t=39731')
-make_corpus_ant_forum('antibab-corpus-nonsex.csv','https://antiwomen.ru/viewtopic.php?f=24&t=49574')
+def make_corpus_holisoo(name, link_to_topic,amount_pages):
+    with open(name, 'w', newline='', encoding="utf-8") as csvfile:
+        headers = ['Label', 'Text']
+        writer = csv.DictWriter(csvfile, fieldnames=headers)
+        writer.writeheader()
+        x = 2
+        while x < amount_pages:
+            html = handling_encoding(get_html_from_link(link_to_topic + '&p=' + str(x)))
+            soup = BeautifulSoup(html, 'html.parser')
+            for text in soup.find_all("div", {"class": "postmsg"}):
+                try:
+                    unwanted = text.find("div", {"class": "quotebox"})
+                    unwanted.extract()
+                    #unwanted = text.find_all('blockquote')
+                    #unwanted.extract()
+                    #print(text.text.strip())
+                    writer.writerow({'Label': 'non_sexist', 'Text': text.getText()})
+                except:
+                    pass
+            x = x + 1
 
-
-
+make_corpus_holisoo('non_sex_forum.csv','https://holywarsoo.net/viewtopic.php?id=1698',1000)
 
 
 
