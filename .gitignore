@@ -108,3 +108,11 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+collect_corpora/codes.py
+.idea/gsoc2019_crosslang.iml
+*.iml
+.idea/workspace.xml
+vk_collector/.~lock.all.csv#
+*.csv#
+.idea/gsoc2019_crosslang.iml
+.idea/workspace.xml

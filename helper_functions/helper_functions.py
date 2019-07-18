@@ -7,6 +7,7 @@ import codecs
 import glob
 import os
 
+
 def get_html_from_link(link):
     try:
         with urllib.request.urlopen(link) as r:

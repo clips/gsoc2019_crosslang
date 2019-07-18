@@ -5,6 +5,8 @@
       <sourceFolder url="file://$MODULE_DIR$" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/vk_collector" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/helper_functions" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/collect_corpora" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/corpora/annotated" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

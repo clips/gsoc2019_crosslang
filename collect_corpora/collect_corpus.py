@@ -2,7 +2,7 @@
 import requests
 import csv
 from codes import vk_api_vers,service_token
-from wiki_one_unfinished import get_html_from_link,handling_encoding
+from helper_functions import get_html_from_link,handling_encoding
 from bs4 import BeautifulSoup
 
 # this is made from vk via vk API
