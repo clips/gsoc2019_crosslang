@@ -116,3 +116,6 @@ vk_collector/.~lock.all.csv#
 *.csv#
 .idea/gsoc2019_crosslang.iml
 .idea/workspace.xml
+*.xml
+*.iml
+*.csv#

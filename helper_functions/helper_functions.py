@@ -4,8 +4,7 @@
 from bs4 import BeautifulSoup
 import urllib.request
 import codecs
-import glob
-import os
+
 
 
 def get_html_from_link(link):
@@ -38,15 +37,3 @@ def extract_lists_from_links(link):
     soup = BeautifulSoup(html, 'html.parser')
     write_words_in_file(html,soup)
 
-
-def make_txts_into_lists():
-    tmp = glob.glob("*.txt")
-    set_of_words = set()
-    for file in tmp:
-        with codecs.open(file, 'r', 'utf-8') as f:
-            for line in f:
-                if " " in line:
-                    pass
-                else:
-                    set_of_words.add(line)
-    return list(set_of_words)
