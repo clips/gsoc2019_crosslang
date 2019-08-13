@@ -145,7 +145,7 @@ def save_preprocessing_phase(filename,filename_out,punctuationBool,stopwordsBool
 # Some would say it would be much smarter to do it earlier. Some may be are correct.
 
 def cleaning_up_the_nulls(filename,filename_new):
-    with open('TemporalCorpora\\' + filename, encoding="utf-8") as file_to_check, open('TemporalCorpora\\'+ filename_new, encoding="utf-8") as file_to_write_in:
+    with open('TemporalCorpora\\' + filename, encoding="utf-8") as file_to_check, open('TemporalCorpora\\'+ filename_new,'w', encoding="utf-8") as file_to_write_in:
         fieldnames = ['Label', 'Text']
         csv_reader = csv.DictReader(file_to_check)
         new_file = csv.DictWriter(file_to_write_in, fieldnames=fieldnames)
@@ -158,7 +158,8 @@ def cleaning_up_the_nulls(filename,filename_new):
 
 # way to speed up the process, optional
 USE_GPU = torch.cuda.is_available()
-
+cleaning_up_the_nulls("tmp_train_no_stopwords.csv","train_no_stopwords.csv")
+cleaning_up_the_nulls("tmp_test_no_stopwords.csv",'test_no_stopwords.csv')
 
 class SexistDataReader(DatasetReader):
 
@@ -188,7 +189,7 @@ class SexistDataReader(DatasetReader):
 
 test = SexistDataReader()
 DATA_ROOT = Path("TemporalCorpora")
-train_ds, test_ds = (test.read(DATA_ROOT / fname) for fname in ["tmp_train_no_stopwords.csv", "tmp_test_no_stopwords.csv"])
+train_ds, test_ds = (test.read(DATA_ROOT / fname) for fname in ["train_no_stopwords.csv", "test_no_stopwords.csv"])
 # does it work?
 print(vars(train_ds[7].fields['tokens']))
 vocab = Vocabulary.from_instances(train_ds + test_ds)
@@ -307,6 +308,7 @@ test_preds = predictor.predict(test_ds)
 with open("/tmp/model.th", 'wb') as f:
     torch.save(model.state_dict(), f)
 vocab.save_to_files("/tmp/vocabulary")
+
 #media_corpora = 'media_1.csv, media_2.csv, media_3.csv'
 #forum_corpora = 'ant_1.csv, ns_1.csv, ant_2.csv'
 #all_corpora = media_corpora + ', ' + forum_corpora
