@@ -119,3 +119,10 @@ vk_collector/.~lock.all.csv#
 *.xml
 *.iml
 *.csv#
+.idea/inspectionProfiles/profiles_settings.xml
+.idea/gsoc2019_crosslang.iml
+.idea/misc.xml
+*.xml
+.idea/vcs.xml
+.idea/workspace.xml
+vk_collector/.~lock.all.csv#
