@@ -1,16 +1,13 @@
-import os
 from pathlib import Path
 
-# Imports for preprocessing of Russian language texts
-import csv
-import nltk
-import re
-import csv
-from string import punctuation
-from pymystem3 import Mystem
+from sklearn.metrics import balanced_accuracy_score
+from sklearn.model_selection import train_test_split
 
 # Imports for ELMO
+import csv
+import nltk
 import torch
+import numpy as np
 from allennlp.data import Instance
 from allennlp.data.dataset_readers import DatasetReader
 from allennlp.data.token_indexers.elmo_indexer import ELMoTokenCharactersIndexer
@@ -27,14 +24,9 @@ import torch.optim as optim
 import torch.nn.functional
 from torch import nn
 from allennlp.training.trainer import Trainer
-from allennlp.predictors import SentenceTaggerPredictor
-
 
 torch.manual_seed(1)
 
-
-# way to speed up the process, optional
-USE_GPU = torch.cuda.is_available()
 
 class SexistDataReader(DatasetReader):
 
@@ -48,6 +40,7 @@ class SexistDataReader(DatasetReader):
 
         if labels:
             label_field = LabelField(labels)
+
             fields["label"] = label_field
         return Instance(fields)
 
@@ -55,18 +48,15 @@ class SexistDataReader(DatasetReader):
         with open(file_path,encoding="utf-8") as f:
             csv_reader = csv.DictReader(f)
             for row in csv_reader:
-                label = row['Label']
+                label = row['Label'].replace(';', '')
                 sentence = row['Text']
-                print(len(sentence))
-                print(len(nltk.word_tokenize(sentence, language='russian')))
-                yield self.text_to_instance([Token(x) for x in nltk.word_tokenize(sentence, language='russian')], label)
+                yield self.text_to_instance([Token(x) for x in nltk.word_tokenize(sentence, language='russian')[:100]], label)
 
 
 test = SexistDataReader()
 DATA_ROOT = Path("TemporalCorpora")
 train_ds, test_ds = (test.read(DATA_ROOT / fname) for fname in ["train_no_stopwords.csv", "test_no_stopwords.csv"])
 # does it work?
-print(vars(train_ds[7].fields['tokens']))
 vocab = Vocabulary.from_instances(train_ds + test_ds)
 
 
@@ -78,7 +68,6 @@ iterator = BucketIterator(batch_size=64,
 iterator.index_with(vocab)
 
 batch = next(iter(iterator(train_ds)))
-print(batch['tokens']['tokens'].shape)
 
 
 class BaselineModel(Model):
@@ -89,21 +78,29 @@ class BaselineModel(Model):
         self.word_embeddings = word_embeddings
         self.encoder = encoder
         self.projection = nn.Linear(self.encoder.get_output_dim(), out_sz)
-        self.loss = nn.BCEWithLogitsLoss()
+        self.loss = nn.BCEWithLogitsLoss(weight=torch.Tensor([0.1, 0.9]))
+ #       self.loss = nn.BCEWithLogitsLoss()
+
 
     def forward(self, tokens, label):
-        print(tokens['tokens'])
         mask = get_text_field_mask(tokens)
-        print(mask.shape)
         embeddings = self.word_embeddings(tokens)
-        print(embeddings.shape)
         state = self.encoder(embeddings, mask)
-        print(state.shape)
         class_logits = self.projection(state)
         output = {"class_logits": class_logits}
-        print(class_logits.shape, torch.nn.functional.one_hot(label,2).shape)
         output["loss"] = self.loss(class_logits, torch.nn.functional.one_hot(label,2).float())
         return output
+
+
+def get_labels(filename):
+    with open('TemporalCorpora\\' + filename, encoding="utf-8") as main_file:
+        csv_reader = csv.DictReader(main_file)
+        true_labels = ""
+        for row in csv_reader:
+            true_labels = true_labels + row['Label']
+        return true_labels
+true_labels = get_labels('test_no_stopwords.csv')
+true_labels_ls = true_labels.split(';')
 
 
 class LSTM_Sexist_Model(Model):
@@ -123,7 +120,6 @@ class LSTM_Sexist_Model(Model):
         tag_logits = self.hidden2tag(encoder_out)
         output = {"tag_logits": tag_logits}
         if label is not None:
-            print(tag_logits)
             self.accuracy(tag_logits, label, mask)
             output["loss"] = sequence_cross_entropy_with_logits(tag_logits, label, mask)
         return output
@@ -135,7 +131,7 @@ class LSTM_Sexist_Model(Model):
 
 
 EMBEDDING_DIM = 256
-HIDDEN_DIM = 6
+HIDDEN_DIM = 64
 
 
 options_file = 'https://s3-us-west-2.amazonaws.com/allennlp/models/elmo/2x1024_128_2048cnn_1xhighway/elmo_2x1024_128_2048cnn_1xhighway_options.json'
@@ -143,56 +139,75 @@ weight_file = 'https://s3-us-west-2.amazonaws.com/allennlp/models/elmo/2x1024_12
 
 elmo_embedder = ElmoTokenEmbedder(options_file, weight_file)
 word_embeddings = BasicTextFieldEmbedder({"tokens": elmo_embedder})
-print('embed dim', word_embeddings.get_output_dim())
 lstm = PytorchSeq2VecWrapper(torch.nn.LSTM(word_embeddings.get_output_dim(), HIDDEN_DIM, batch_first=True, bidirectional=True))
 model = BaselineModel(word_embeddings,lstm)
 #model = LSTM_Sexist_Model(word_embeddings, lstm, vocab)
-if torch.cuda.is_available():
-    cuda_device = 0
-    model = model.cuda(cuda_device)
 
 from allennlp.nn import util as nn_util
 
 batch = nn_util.move_to_device(batch, 0 )
 
-# tokens = batch['tokens']
-# labels = batch
-# print(tokens)
-# mask = get_text_field_mask(tokens)
-# print(mask.shape)
-# embeddings = model.word_embeddings(tokens)
-# state = model.encoder(embeddings, mask)
-# class_logits = model.projection(state)
-# print(class_logits.shape)
-#
-# print(model(**batch))
+train_dataset, val_dataset = train_test_split(train_ds, train_size=0.9, test_size=0.1, shuffle=True)
 
-optimizer = optim.Adam(model.parameters(), lr=0.1)
+optimizer = optim.RMSprop(model.parameters(), lr=0.01)
+if torch.cuda.is_available():
+    cuda_device = 0
+    model = model.cuda(cuda_device)
+
 trainer = Trainer(model=model,
                   optimizer=optimizer,
                   iterator=iterator,
-                  train_dataset=train_ds,
-                  validation_dataset=test_ds,
+                  train_dataset=train_dataset,
+                  validation_dataset=val_dataset,
                   patience=10,
-                  num_epochs=1000,
+                  num_epochs=50,
                   cuda_device=0)
-trainer.train()
-predictor = SentenceTaggerPredictor(model, dataset_reader=test)
-train_preds = predictor.predict(train_ds)
-test_preds = predictor.predict(test_ds)
-with open("/tmp/model.th", 'wb') as f:
-    torch.save(model.state_dict(), f)
-vocab.save_to_files("/tmp/vocabulary")
+print(trainer.train())
 
-#media_corpora = 'media_1.csv, media_2.csv, media_3.csv'
-#forum_corpora = 'ant_1.csv, ns_1.csv, ant_2.csv'
-#all_corpora = media_corpora + ', ' + forum_corpora
-#create_train_and_test_folder(all_corpora,'tmp_train.csv','tmp_test.csv')
-#save_preprocessing_phase('tmp_test','tmp_test_no_stopwords',False,True,False)
-#save_preprocessing_phase('tmp_test_no_stopwords','tmp_test_no_punctuation',True,False,False)
-#save_preprocessing_phase('tmp_test','tmp_test_just_lemm_and_no_punct',True,False,True)
-#save_preprocessing_phase('tmp_test_no_punctuation','tmp_test_lemmatized',False,False,True)
-#save_preprocessing_phase('tmp_train','tmp_train_no_stopwords',False,True,False)
-#save_preprocessing_phase('tmp_train_no_stopwords','tmp_train_no_punctuation',True,False,False)
-#save_preprocessing_phase('tmp_train_no_punctuation','tmp_train_lemmatized',False,False,True)
-#save_preprocessing_phase('tmp_train','tmp_train_just_lemm_and_no_punct',True,False,True)
+from tqdm import tqdm
+from scipy.special import expit  # the sigmoid function
+
+
+def tonp(tsr): return tsr.detach().cpu().numpy()
+
+
+class Predictor:
+    def __init__(self, model, iterator,
+                 cuda_device= -1):
+        self.model = model
+        self.iterator = iterator
+        self.cuda_device = cuda_device
+
+    def _extract_data(self, batch):
+        out_dict = self.model(**batch)
+        return expit(tonp(out_dict["class_logits"]))
+
+    def predict(self, ds):
+        pred_generator = self.iterator(ds, num_epochs=1, shuffle=False)
+        self.model.eval()
+        pred_generator_tqdm = tqdm(pred_generator,
+                                   total=self.iterator.get_num_batches(ds))
+        preds = []
+        with torch.no_grad():
+            for batch in pred_generator_tqdm:
+                batch = nn_util.move_to_device(batch, self.cuda_device)
+                preds.append(self._extract_data(batch))
+        return np.concatenate(preds, axis=0)
+
+
+from allennlp.data.iterators import BasicIterator
+
+# iterate over the dataset without changing its order
+seq_iterator = BasicIterator(batch_size=64)
+seq_iterator.index_with(vocab)
+
+predictor = Predictor(model, seq_iterator, cuda_device=0 if USE_GPU else -1)
+test_preds = predictor.predict(test_ds)
+pred_ids = np.argmax(test_preds, axis=-1)
+mapper = {'sexist':  1, 'non_sexist': 0}
+true_labels_ls.pop(-1)
+print(pred_ids)
+print(pred_ids, np.asarray(list(map(mapper.get, true_labels_ls))))
+print(balanced_accuracy_score(np.asarray(list(map(mapper.get, true_labels_ls))) ,pred_ids))
+
+vocab.save_to_files("/tmp/vocabulary")

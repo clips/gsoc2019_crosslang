@@ -6,58 +6,44 @@ import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import LabelEncoder
 from sklearn.naive_bayes import GaussianNB
-from sklearn.model_selection import StratifiedKFold
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import balanced_accuracy_score
+from sklearn.model_selection import train_test_split
+
+labels_enc = LabelEncoder()
+tfidf_vec = TfidfVectorizer(min_df=5)
 
 
-# Raw dataset (with original preprocessing)
+# Just to be on a safe side, I make sklearn split and check with it too
 
-
-
-# No stopwords, no punctuation, no regex
-
-sexism_no_stopwords_test = pd.read_csv('TemporalCorpora\\test_no_stop_and_regex.csv')
-sexism_no_stopwords_train = pd.read_csv('TemporalCorpora\\train_no_stop_and_regex.csv')
-sexism_no_stopwords_test['Label'] = sexism_no_stopwords_test['Label'].str.replace(';', '')
-sexism_no_stopwords_train['Label'] = sexism_no_stopwords_train['Label'].str.replace(';', '')
-remove_said_regexp = re.compile('.*писал\(а\):')
-sexism_no_stopwords_train['Text'] = sexism_no_stopwords_train['Text'].str.replace(remove_said_regexp, '')
-sexism_no_stopwords_test['Text'] = sexism_no_stopwords_test['Text'].str.replace(remove_said_regexp, '')
-
-
-# Lemmatized version
-
-
-# Sklearn version of separation to test and train
-# Just to be on a safe side
-sexism_test = pd.read_csv('TemporalCorpora\\test.csv')
-sexism_train = pd.read_csv('TemporalCorpora\\train.csv')
+sexism_test = pd.read_csv('TemporalCorpora\\test_no_stop_and_regex.csv')
+sexism_train = pd.read_csv('TemporalCorpora\\train_no_stop_and_regex.csv')
 sexism_full = pd.concat([sexism_test, sexism_train], ignore_index=True)
 sexism_full['Label'] = sexism_full['Label'].str.replace(';', '')
 remove_said_regexp = re.compile('.*писал\(а\):')
 remove_n_and_r = re.compile('[\r\n]')
 sexism_full['Text'] = sexism_full['Text'].str.replace(remove_said_regexp, '')
 sexism_full['Text'] = sexism_full['Text'].str.replace(remove_n_and_r, '')
-
-
-# Visual representation
-
-plt.style.use('ggplot')
-labels_count = sexism_full['Label'].value_counts()
-plt.figure(figsize=(10,5))
-plt.pie(labels_count.values, explode=[0, 0.1], labels = labels_count.index)
-plt.title('Current data-set by labels')
-#plt.show()
-
-
-# Labels to integer representation
-
-labels_enc = LabelEncoder()
 y_full = labels_enc.fit_transform(sexism_full['Label'])
+X_full_tfidf = tfidf_vec.fit_transform(sexism_full['Text'])
 
+X_full_tfidf = tfidf_vec.fit_transform(sexism_full['Text'])
+x_tr,x_test,y_tr,y_test = train_test_split(X_full_tfidf, y_full,stratify=y_full, test_size=0.1, train_size=0.9, shuffle=True)
 
+gauss_nb_tfidf = GaussianNB()
 
-tfidf_vec = TfidfVectorizer(min_df=5)
+def calculate_for_base_model(x_train,x_test,y_train,y_test):
+    # We have to use balanced accuracy score, because our corpus in unballanced
+    gauss_nb_tfidf.fit(x_train.toarray(), y_train)
+    preds = gauss_nb_tfidf.predict(x_test.toarray())
+    print(balanced_accuracy_score(y_test, preds))
 
+#calculate_for_base_model(x_tr,x_test,y_tr,y_test)
 
+logisticRegr = LogisticRegression()
+def calculate_log_regr(x_train,x_test,y_train,y_test):
+    logisticRegr.fit(x_train, y_train)
+    predictions = logisticRegr.predict(x_test)
+    print(balanced_accuracy_score(y_test, predictions))
 
+#calculate_log_regr(x_tr,x_test,y_tr,y_test)
